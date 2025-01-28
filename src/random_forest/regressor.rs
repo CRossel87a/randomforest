@@ -4,6 +4,9 @@ use crate::functions;
 use crate::table::Table;
 use std::io::{Read, Write};
 use std::num::NonZeroUsize;
+use std::fs::File;
+use std::io::{BufReader, BufWriter};
+use std::path::Path;
 
 /// Random forest options.
 #[derive(Debug, Clone, Default)]
@@ -101,6 +104,24 @@ impl RandomForestRegressor {
     pub fn deserialize<R: Read>(reader: R) -> std::io::Result<Self> {
         let inner = RandomForest::deserialize(reader)?;
         Ok(Self { inner })
+    }
+
+    pub fn save_to_file<P: AsRef<Path>>(&self, path: P) -> std::io::Result<()> {
+        // Create or truncate the file at the given path
+        let file = File::create(path)?;
+        // Wrap the file in a buffered writer for efficient writing
+        let writer = BufWriter::new(file);
+        // Serialize the RandomForest into the writer
+        self.serialize(writer)
+    }
+
+    pub fn load_from_file<P: AsRef<Path>>(path: P) -> std::io::Result<Self> {
+        // Open the file in read-only mode
+        let file = File::open(path)?;
+        // Wrap the file in a buffered reader for efficient reading
+        let reader = BufReader::new(file);
+        // Deserialize the RandomForest from the reader
+        Self::deserialize(reader)
     }
 }
 
